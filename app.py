@@ -1,4 +1,6 @@
-import streamlit as st
+
+    
+  import streamlit as st
 import pandas as pd
 import numpy as np
 
@@ -14,18 +16,25 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
-st.title("🤖 QUANTUM SYNDICATE — GLOBAL ENGINE 2026")
+st.title("🤖 QUANTUM SYNDICATE — GLOBAL ENGINE")
 st.subheader("Model przetwarza pełną, globalną bazę danych ATP i Challenger z repozytoriów danych.")
 
-# Serwer pobierze to bez problemu, bo nie ma blokad internetu!
+# Łączymy stabilne bazy danych, aby ominać błąd braku pliku 2026
 @st.cache_data(ttl=3600)
 def load_global_data():
-    url = "https://githubusercontent.com"
-    df = pd.read_csv(url)
-    return df
+    try:
+        # Ładujemy pełną bazę z ostatniego kompletnego sezonu
+        url_2025 = "https://githubusercontent.com"
+        df = pd.read_csv(url_2025)
+        return df
+    except Exception as e:
+        st.error(f"Błąd krytyczny pobierania danych: {e}")
+        return None
 
 df_matches = load_global_data()
-st.success(f"🎯 Sukces! Załadowano globalną bazę danych online. Wykryto {len(df_matches)} rozegranych meczów w sezonie 2026!")
+
+if df_matches is not None:
+    st.success(f"🎯 Sukces! Załadowano globalną bazę danych online. Wykryto {len(df_matches)} rozegranych meczów z oficjalnego repozytorium!")
 
 def get_player_surface_stats(player_name, df, surface_type):
     if df is None:
@@ -47,8 +56,8 @@ def get_player_surface_stats(player_name, df, surface_type):
     calculated_dr = 1.0 + (win_ratio - 0.5) * 0.38
     
     # Bezpieczne pobranie nazwy wyświetlanej
-    sample_row = player_games.iloc[0]
-    display_name = sample_row['winner_name'] if name_upper in sample_row['winner_name'].upper() else sample_row['loser_name']
+    row = player_games.iloc[0]
+    display_name = row['winner_name'] if name_upper in str(row['winner_name']).upper() else row['loser_name']
     
     return {
         "name": display_name,
@@ -62,7 +71,7 @@ def get_player_surface_stats(player_name, df, surface_type):
 st.sidebar.header("🎛️ Panel Sterowania")
 surface = st.sidebar.selectbox("Nawierzchnia meczu", ["Clay", "Hard"])
 p1_input = st.sidebar.text_input("Nazwisko Zawodnika A (np. Ruud)", "Ruud")
-p2_input = st.sidebar.text_input("Nazwisko Zawodnika B (np. Faria)", "Faria")
+p2_input = st.sidebar.text_input("Nazwisko Zawodnika B (np. Tsitsipas)", "Tsitsipas")
 
 st.sidebar.markdown("---")
 st.sidebar.markdown("### 💰 Kursy Bukmacherskie (1/2)")
@@ -76,7 +85,7 @@ bankroll = st.sidebar.number_input("Twój budżet (zł)", value=1000.0, step=50.
 submit = st.sidebar.button("🚀 URUCHOM GLOBALNĄ MATRIX 360°")
 
 # 4. Sekcja Obliczeń
-if submit:
+if submit and df_matches is not None:
     p1_stats = get_player_surface_stats(p1_input, df_matches, surface)
     p2_stats = get_player_surface_stats(p2_input, df_matches, surface)
     
@@ -91,14 +100,14 @@ if submit:
         c1, c2 = st.columns(2)
         with c1:
             st.markdown(f"### 📊 Profil: {p1_stats['name'].upper()}")
-            st.write(f"Mecze w 2026: *{p1_stats['matches']}* (Wygrane: {p1_stats['wins']})")
+            st.write(f"Mecze w bazie: *{p1_stats['matches']}* (Wygrane: {p1_stats['wins']})")
             st.metric("Dynamiczne Surface Elo", f"{p1_stats['elo']:.1f}")
             st.metric("Dominance Ratio (DR)", f"{p1_stats['dr']:.2f}")
             st.write(f"Prawdopodobieństwo: *{prob_p1*100:.1f}%*")
             st.write(f"Kurs sprawiedliwy: *{1.0/prob_p1:.2f}*")
         with c2:
             st.markdown(f"### 📊 Profil: {p2_stats['name'].upper()}")
-            st.write(f"Mecze w 2026: *{p2_stats['matches']}* (Wygrane: {p2_stats['wins']})")
+            st.write(f"Mecze w bazie: *{p2_stats['matches']}* (Wygrane: {p2_stats['wins']})")
             st.metric("Dynamiczne Surface Elo", f"{p2_stats['elo']:.1f}")
             st.metric("Dominance Ratio (DR)", f"{p2_stats['dr']:.2f}")
             st.write(f"Prawdopodobieństwo: *{prob_p2*100:.1f}%*")
